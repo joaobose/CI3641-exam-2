@@ -1,10 +1,4 @@
-## 1.B - Python practico
-
-- Escribir codigo 👌🏻
-- Comentarios 👌🏻
-- Escribir respuesta 👀
-
-## 4 - Corrutinas 👀
+## 4 - Corrutinas 👌🏻
 
 ## 2 - Pasaje de parametros 👀
 
@@ -16,3 +10,9 @@
 
 - Investigacion
 - Redaccion
+
+## 1.B - Python practico
+
+- Escribir codigo 👌🏻
+- Comentarios 👌🏻
+- Escribir respuesta 👀

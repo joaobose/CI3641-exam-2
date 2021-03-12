@@ -1,0 +1,29 @@
+coroutine w():
+    int a = 0
+    loop:
+        a = a + A
+        print(a)
+        if a mod 2 == 0:
+            transfer t()
+        else:
+            transfer f()
+
+coroutine t():
+    int b = 1
+    loop:
+        b = (b + 1) * B
+        print(b)
+        if b mod 2 == 0:
+            transfer w()
+        else:
+            transfer f()
+
+coroutine f():
+    int c = 1
+    loop:
+        c = c + 1
+        print(c)
+        if c mod 2 == 0:
+            transfer w()
+        else:
+            transfer t()
