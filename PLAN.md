@@ -1,6 +1,6 @@
 ## 4 - Corrutinas 👌🏻
 
-## 2 - Pasaje de parametros 👀
+## 2 - Pasaje de parametros 👌🏻
 
 ## 5 - Sistema de tipos
 
@@ -15,4 +15,4 @@
 
 - Escribir codigo 👌🏻
 - Comentarios 👌🏻
-- Escribir respuesta 👀
+- Escribir respuesta

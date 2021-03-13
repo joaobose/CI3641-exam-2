@@ -14,3 +14,10 @@ const P4 = {
   B: 2 * ((Y + Z) % 5) + 3
 };
 console.log(P4);
+
+// Pregunta 2
+const P2 = {
+  tu: X + Y,
+  que: Y + Z
+};
+console.log(P2);

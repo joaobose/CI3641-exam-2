@@ -1,0 +1,13 @@
+int tu = X + Y, que = Y + Z;
+
+proc lagarto(int x, int y, int z) { 
+    x = x + y - z
+    y = z * 2 - x
+    z = x + y - 1
+}
+
+lagarto(tu, tu, que)
+lagarto(tu, que, que)
+lagarto(que, tu, tu)
+
+print(tu, que)
