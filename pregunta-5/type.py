@@ -261,7 +261,7 @@ class TypeParser:
 # --------------- parse
 to_parse = "a -> a -> a"
 transformed = TypeParser().inter(to_parse)
-print(to_parse)
+print(to_parse)  # a -> a -> a
 
 # --------------- unificacion
 
@@ -272,7 +272,7 @@ constant_constant_t = TypeParser().inter(constant_constant)
 correct_constant = "Int"
 correct_constant_t = TypeParser().inter(correct_constant)
 
-print(constant_constant_t.unify(correct_constant_t))
+print(constant_constant_t.unify(correct_constant_t))  # Bool
 
 # # must fail
 # wrong_constant = "Bool"
@@ -286,7 +286,7 @@ var_constant_t = TypeParser().inter(var_constant)
 whatever = "a -> a"
 whatever_t = TypeParser().inter(whatever)
 
-print(var_constant_t.unify(whatever_t))
+print(var_constant_t.unify(whatever_t))  # String
 
 # ----- domain variable and target variable
 var_var = "a -> a"
@@ -295,7 +295,7 @@ var_var_t = TypeParser().inter(var_var)
 whatever = "a -> a"
 whatever_t = TypeParser().inter(whatever)
 
-print(var_var_t.unify(whatever_t))
+print(var_var_t.unify(whatever_t))  # a -> a
 
 # ----- domain variable and target function
 var_fun = "a -> b -> a -> b -> a"
@@ -303,7 +303,7 @@ var_fun_t = TypeParser().inter(var_fun)
 whatever = "Bool"
 whatever_t = TypeParser().inter(whatever)
 
-print(var_fun_t.unify(whatever_t))
+print(var_fun_t.unify(whatever_t))  # b -> Bool -> b -> Bool
 
 # ----- domain function and target function
 fun_fun = "(b -> T) -> (b -> T)"
@@ -311,4 +311,4 @@ fun_fun_t = TypeParser().inter(fun_fun)
 whatever = "E -> c"
 whatever_t = TypeParser().inter(whatever)
 
-print(fun_fun_t.unify(whatever_t))
+print(fun_fun_t.unify(whatever_t))  # E -> T
