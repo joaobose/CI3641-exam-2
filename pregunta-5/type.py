@@ -17,64 +17,84 @@ class TypeEcuationTerm:
         self.left = left
         self.right = right
 
-    # Retorna la version normalizada de la ecuacino
+    # Retorna la version normalizada de la ecuacion
     def norm(self):
         if self.left is not VariableType:
             return TypeEcuationTerm(self.right, self.left)
         return self
 
+    # Representacion string
     def __str__(self):
         return f'{str(self.left)} = {str(self.right)}'
 
+    # Hash - para trabajar con el tipo set
     def __hash__(self):
         return hash(str(self))
 
+    # Igualdad de ecuaciones
     def __eq__(self, other):
         return str(self) == str(other)
 
 
 class Type:
+    # Clase tipo base
+
+    # La igualda esta dada por la representacion str
     def __eq__(self, other):
         return str(self) == str(other)
 
+    # Definimos la propiedad kind para poder utilizar
+    # el operardor is, ie: x is ConstType
     @property
     def kind(self):
         return self.__class__
 
 
 class ConstType(Type):
+    # Clase tipo constante
+
     def __init__(self, token):
         self.token = token
 
+    # La representacion es su token
     def __str__(self):
         return self.token
 
+    # No se puede unificar un tipo constante
     def unify(self, other):
         raise Exception(
             f'Error: no se puede unificar {str(other)} con una constante.')
 
+    # Copy
     def copy(self):
         return ConstType(self.token)
 
+    # No se puede sustituir dentro de una constante
     def replacing_var(self, var, value):
         raise Exception(
             f'Error: No se pueden reemplazar valores dentro de una constante.')
 
 
 class VariableType(Type):
+    # Tipo valiable
+
     def __init__(self, token):
         self.token = token
 
+    # La representacion str es su token
     def __str__(self):
         return self.token
 
+    # No se puede unificar un tipo variable sin tener contexto
     def unify(self, other):
         raise Exception(
             f'Error: no se puede unificar {str(other)} con una variable sin contexto.')
 
+    # Copy
     def copy(self):
         return VariableType(self.token)
 
+    # sustitucion textual
     @return_copy
     def replacing_var(self, var, value):
         if self == var:
@@ -83,19 +103,21 @@ class VariableType(Type):
 
 
 class FuncType(Type):
+    # Tipo funcion
+
+    # Tiene el tipo del dominio (domain) y el tipo del rango (target)
     def __init__(self, domain, target):
         self.domain = domain
         self.target = target
 
-    def textual_subs(self, token, substituion):
-        pass
-
+    # Representacion str
     def __str__(self):
         domain_str = f'({str(self.domain)})' if self.domain.kind is FuncType else str(
             self.domain)
         target_str = f'{str(self.target)}'
         return f'{domain_str} -> {target_str}'
 
+    # Unificacion sobre una aplicacion
     @return_copy
     def unify(self, other):
         if self.domain.kind is ConstType:
@@ -162,8 +184,6 @@ class FuncType(Type):
             #   var = t
             # con t.kind is not VariableType and var.kind is VariableType
 
-            # normalizamos
-
             # Reemplazamos las ecuaciones resultantes
             result = self.target
             for eq in equations:
@@ -171,9 +191,11 @@ class FuncType(Type):
 
             return result
 
+    # Deep copy
     def copy(self):
         return FuncType(self.domain.copy(), self.target.copy())
 
+    # Sustitucion textual
     def replacing_var(self, var, value):
         copy = self.copy()
 
@@ -189,6 +211,8 @@ class FuncType(Type):
 
 
 class TypeTransformer(Transformer):
+    # Transformer del parser
+
     def const(self, t):
         token, = t
         return ConstType(token)
@@ -203,6 +227,8 @@ class TypeTransformer(Transformer):
 
 
 class TypeParser:
+    # Parser de Lark
+
     def __init__(self):
         self.parser = Lark(r"""
             ?type: func
@@ -232,52 +258,52 @@ class TypeParser:
         return self.transform(self.parse(string))
 
 
-# # --------------- parse
-# to_parse = "(a -> a) -> a"
-# transformed = TypeParser().inter(to_parse)
-# print(to_parse)
+# --------------- parse
+to_parse = "a -> a -> a"
+transformed = TypeParser().inter(to_parse)
+print(to_parse)
 
 # --------------- unificacion
 
-# # ----- domain constant
-# constant_constant = "Int -> Bool"
-# constant_constant_t = TypeParser().inter(constant_constant)
+# ----- domain constant
+constant_constant = "Int -> Bool"
+constant_constant_t = TypeParser().inter(constant_constant)
 
-# correct_constant = "Int"
-# correct_constant_t = TypeParser().inter(correct_constant)
+correct_constant = "Int"
+correct_constant_t = TypeParser().inter(correct_constant)
 
-# print(constant_constant_t.unify(correct_constant_t))
+print(constant_constant_t.unify(correct_constant_t))
 
 # # must fail
 # wrong_constant = "Bool"
 # wrong_constant_t = TypeParser().inter(wrong_constant)
 # print(constant_constant_t.unify(wrong_constant_t))
 
-# # ----- domain variable and target constant
-# var_constant = "a -> String"
-# var_constant_t = TypeParser().inter(var_constant)
+# ----- domain variable and target constant
+var_constant = "a -> String"
+var_constant_t = TypeParser().inter(var_constant)
 
-# whatever = "a -> a"
-# whatever_t = TypeParser().inter(whatever)
+whatever = "a -> a"
+whatever_t = TypeParser().inter(whatever)
 
-# print(var_constant_t.unify(whatever_t))
+print(var_constant_t.unify(whatever_t))
 
-# # ----- domain variable and target variable
-# var_var = "a -> a"
-# var_var_t = TypeParser().inter(var_var)
+# ----- domain variable and target variable
+var_var = "a -> a"
+var_var_t = TypeParser().inter(var_var)
 
-# whatever = "a -> a"
-# whatever_t = TypeParser().inter(whatever)
+whatever = "a -> a"
+whatever_t = TypeParser().inter(whatever)
 
-# print(var_var_t.unify(whatever_t))
+print(var_var_t.unify(whatever_t))
 
-# # ----- domain variable and target function
-# var_fun = "a -> b -> a -> b -> a"
-# var_fun_t = TypeParser().inter(var_fun)
-# whatever = "Bool"
-# whatever_t = TypeParser().inter(whatever)
+# ----- domain variable and target function
+var_fun = "a -> b -> a -> b -> a"
+var_fun_t = TypeParser().inter(var_fun)
+whatever = "Bool"
+whatever_t = TypeParser().inter(whatever)
 
-# print(var_fun_t.unify(whatever_t))
+print(var_fun_t.unify(whatever_t))
 
 # ----- domain function and target function
 fun_fun = "(b -> T) -> (b -> T)"
