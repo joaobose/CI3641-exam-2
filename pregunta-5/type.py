@@ -2,9 +2,35 @@ from lark import Lark, Transformer
 
 
 def return_copy(f):
+    # Decorador para retonar un deep copy del objeto retonado por f
+    # Este docorador supone que f retona un objeto de tipo Type
+
     def k(*args):
         return f(*args).copy()
     return k
+
+
+class TypeEcuationTerm:
+    # Representa la ecuacion de tipos left = right
+
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    # Retorna la version normalizada de la ecuacino
+    def norm(self):
+        if self.left is not VariableType:
+            return TypeEcuationTerm(self.right, self.left)
+        return self
+
+    def __str__(self):
+        return f'{str(self.left)} = {str(self.right)}'
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        return str(self) == str(other)
 
 
 class Type:
@@ -67,9 +93,7 @@ class FuncType(Type):
     def __str__(self):
         domain_str = f'({str(self.domain)})' if self.domain.kind is FuncType else str(
             self.domain)
-        target_str = f'({str(self.target)})' if self.target.kind is FuncType else str(
-            self.target)
-        # target_str = f'{str(self.target)}' # UNCOMMENT FOR CORRECT PRINT
+        target_str = f'{str(self.target)}'
         return f'{domain_str} -> {target_str}'
 
     @return_copy
@@ -90,7 +114,62 @@ class FuncType(Type):
 
         if self.domain.kind is FuncType:
             assert other.kind is FuncType
-            ...
+
+            # Ecuacion inicial
+            equations = {TypeEcuationTerm(self.domain, other)}
+            change = True
+
+            while change:
+                # Removemos ecuaciones de la forma X = X
+                new_eq = {eq for eq in equations if eq.left != eq.right}
+
+                # Reducimos las ecuaciones de funciones a sub-ecuaciones
+                fun_eq = {
+                    eq for eq in new_eq if eq.left.kind is FuncType and eq.right.kind is FuncType}
+                new_eq = new_eq - fun_eq
+
+                for k in fun_eq:
+                    domain_eq = TypeEcuationTerm(
+                        k.right.domain, k.left.domain).norm()
+                    target_eq = TypeEcuationTerm(
+                        k.right.target, k.left.target).norm()
+                    new_eq.add(domain_eq)
+                    new_eq.add(target_eq)
+
+                # Condicion de cambio
+                change = not (new_eq == equations)
+                equations = new_eq
+
+            # Buscamos inconsistencias -> Const = Const
+            if len({eq for eq in equations if eq.left.kind is ConstType and eq.right.kind is ConstType}) > 0:
+                raise Exception(
+                    f'Error: no se puede unificar {str(self.domain)} con {str(other)}.')
+
+            # Buscamos inconsistencias
+            for eq1 in equations:
+                for eq2 in equations:
+                    # Circular -> a = b and b = a
+                    if eq1.left == eq2.right and eq1.right == eq2.left:
+                        raise Exception(
+                            f'Error: no se puede unificar {str(self.domain)} con {str(other)}. Referencia circular')
+
+                    # Contradiction -> a = b and a = c
+                    if eq1.left == eq2.left and eq1.right != eq2.right:
+                        raise Exception(
+                            f'Error: no se puede unificar {str(self.domain)} con {str(other)}. Contradiccion')
+
+            # Para este punto, todas las ecuaciones son de la forma
+            #   var = t
+            # con t.kind is not VariableType and var.kind is VariableType
+
+            # normalizamos
+
+            # Reemplazamos las ecuaciones resultantes
+            result = self.target
+            for eq in equations:
+                result = result.replacing_var(eq.left, eq.right)
+
+            return result
 
     def copy(self):
         return FuncType(self.domain.copy(), self.target.copy())
@@ -193,13 +272,17 @@ class TypeParser:
 # print(var_var_t.unify(whatever_t))
 
 # # ----- domain variable and target function
-# var_fun = "a -> (b -> (a -> (b -> a)))"
+# var_fun = "a -> b -> a -> b -> a"
 # var_fun_t = TypeParser().inter(var_fun)
 # whatever = "Bool"
 # whatever_t = TypeParser().inter(whatever)
 
 # print(var_fun_t.unify(whatever_t))
 
-pepe = "Int -> Int -> Int -> Int"
-pepe_t = TypeParser().inter(pepe)
-print(pepe_t)
+# ----- domain function and target function
+fun_fun = "(b -> T) -> (b -> T)"
+fun_fun_t = TypeParser().inter(fun_fun)
+whatever = "E -> c"
+whatever_t = TypeParser().inter(whatever)
+
+print(fun_fun_t.unify(whatever_t))
