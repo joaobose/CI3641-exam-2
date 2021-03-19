@@ -63,16 +63,16 @@ class ConstType(Type):
     # No se puede unificar un tipo constante
     def unify(self, other):
         raise Exception(
-            f'Error: no se puede unificar {str(other)} con una constante.')
+            f'ERROR: no se puede unificar {str(other)} con una constante.')
 
     # Copy
     def copy(self):
         return ConstType(self.token)
 
-    # No se puede sustituir dentro de una constante
+    # Sustitucion textual
+    @return_copy
     def replacing_var(self, var, value):
-        raise Exception(
-            f'Error: No se pueden reemplazar valores dentro de una constante.')
+        return self
 
 
 class VariableType(Type):
@@ -85,10 +85,10 @@ class VariableType(Type):
     def __str__(self):
         return self.token
 
-    # No se puede unificar un tipo variable sin tener contexto
+    # Unificacion de variable
+    @return_copy
     def unify(self, other):
-        raise Exception(
-            f'Error: no se puede unificar {str(other)} con una variable sin contexto.')
+        return other
 
     # Copy
     def copy(self):
@@ -121,7 +121,7 @@ class FuncType(Type):
     @return_copy
     def unify(self, other):
         if self.domain.kind is ConstType:
-            assert other == self.domain, f'Error: no se pudo unificar {str(self.domain)} con {str(other)}'
+            assert other == self.domain, f'ERROR: no se pudo unificar {str(self.domain)} con {str(other)}'
             return self.target
 
         if self.domain.kind is VariableType:
@@ -135,15 +135,37 @@ class FuncType(Type):
                 return self.target.replacing_var(self.domain, other)
 
         if self.domain.kind is FuncType:
-            assert other.kind is FuncType
+            assert other.kind is FuncType, f'ERROR: no se pudo unificar {str(self.domain)} con {str(other)}'
 
             # Ecuacion inicial
             equations = {TypeEcuationTerm(self.domain, other)}
             change = True
 
             while change:
+
                 # Removemos ecuaciones de la forma X = X
                 new_eq = {eq for eq in equations if eq.left != eq.right}
+
+                # Sustituimos las ecuaciones
+                remove = set()
+                add = set()
+                for eq1 in new_eq:
+                    for eq2 in new_eq:
+
+                        #  Ecuaciones de la forma a = T and a = b
+                        if eq1.left == eq2.left and eq1.right != eq2.right and (eq1.right.kind is ConstType or eq2.right.kind is ConstType):
+
+                            # eq1: a = T, eq2: a = b => b = T
+                            if eq1.right.kind is ConstType and eq2.right.kind is VariableType:
+                                remove.add(eq2)
+                                add.add(TypeEcuationTerm(eq2.right, eq1.right))
+
+                            # eq1: a = b, eq2: a = T => b = T
+                            elif eq1.right.kind is VariableType:
+                                remove.add(eq1)
+                                add.add(TypeEcuationTerm(eq1.right, eq2.right))
+
+                new_eq = (new_eq - remove).union(add)
 
                 # Reducimos las ecuaciones de funciones a sub-ecuaciones
                 fun_eq = {
@@ -170,15 +192,18 @@ class FuncType(Type):
             # Buscamos inconsistencias
             for eq1 in equations:
                 for eq2 in equations:
-                    # Circular -> a = b and b = a
+                    # Inconsistencia, circular -> a = b and b = a
                     if eq1.left == eq2.right and eq1.right == eq2.left:
                         raise Exception(
                             f'Error: no se puede unificar {str(self.domain)} con {str(other)}. Referencia circular')
 
-                    # Contradiction -> a = b and a = c
+                    # Caso -> a = b and a = c
                     if eq1.left == eq2.left and eq1.right != eq2.right:
-                        raise Exception(
-                            f'Error: no se puede unificar {str(self.domain)} con {str(other)}. Contradiccion')
+
+                        # Inconsistencia, contradiccion -> a = T and b = Y
+                        if eq2.right is ConstType and eq1.right is ConstType:
+                            raise Exception(
+                                f'Error: no se puede unificar {str(self.domain)} con {str(other)}. Contradiccion')
 
             # Para este punto, todas las ecuaciones son de la forma
             #   var = t
@@ -256,59 +281,3 @@ class TypeParser:
 
     def inter(self, string):
         return self.transform(self.parse(string))
-
-
-# --------------- parse
-to_parse = "a -> a -> a"
-transformed = TypeParser().inter(to_parse)
-print(to_parse)  # a -> a -> a
-
-# --------------- unificacion
-
-# ----- domain constant
-constant_constant = "Int -> Bool"
-constant_constant_t = TypeParser().inter(constant_constant)
-
-correct_constant = "Int"
-correct_constant_t = TypeParser().inter(correct_constant)
-
-print(constant_constant_t.unify(correct_constant_t))  # Bool
-
-# # must fail
-# wrong_constant = "Bool"
-# wrong_constant_t = TypeParser().inter(wrong_constant)
-# print(constant_constant_t.unify(wrong_constant_t))
-
-# ----- domain variable and target constant
-var_constant = "a -> String"
-var_constant_t = TypeParser().inter(var_constant)
-
-whatever = "a -> a"
-whatever_t = TypeParser().inter(whatever)
-
-print(var_constant_t.unify(whatever_t))  # String
-
-# ----- domain variable and target variable
-var_var = "a -> a"
-var_var_t = TypeParser().inter(var_var)
-
-whatever = "a -> a"
-whatever_t = TypeParser().inter(whatever)
-
-print(var_var_t.unify(whatever_t))  # a -> a
-
-# ----- domain variable and target function
-var_fun = "a -> b -> a -> b -> a"
-var_fun_t = TypeParser().inter(var_fun)
-whatever = "Bool"
-whatever_t = TypeParser().inter(whatever)
-
-print(var_fun_t.unify(whatever_t))  # b -> Bool -> b -> Bool
-
-# ----- domain function and target function
-fun_fun = "(b -> T) -> (b -> T)"
-fun_fun_t = TypeParser().inter(fun_fun)
-whatever = "E -> c"
-whatever_t = TypeParser().inter(whatever)
-
-print(fun_fun_t.unify(whatever_t))  # E -> T

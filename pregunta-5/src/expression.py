@@ -2,6 +2,8 @@ from lark import Lark, Transformer
 
 
 class Exp:
+    # Clase expresion base
+
     def __eq__(self, other):
         return str(self) == str(other)
 
@@ -11,18 +13,24 @@ class Exp:
 
 
 class AtomExp(Exp):
+    # Clase expresion atomica
+
     def __init__(self, token):
         self.token = token
 
+    # La representacion es su token
     def __str__(self):
         return self.token
 
 
 class FuncExp(Exp):
+    # Clase expresion aplicacion funcional
+
     def __init__(self, fun, arg):
         self.fun = fun
         self.arg = arg
 
+    # Representacion str
     def __str__(self):
         fun_str = f'({str(self.fun)})' if isinstance(
             self.fun, FuncExp) else str(self.fun)
@@ -32,6 +40,8 @@ class FuncExp(Exp):
 
 
 class ExpTransformer(Transformer):
+    # Transformer del parser
+
     def atom(self, t):
         token, = t
         return AtomExp(token)
@@ -42,6 +52,8 @@ class ExpTransformer(Transformer):
 
 
 class ExpParser:
+    # Parser de Lark (AMBIGUO)
+
     def __init__(self):
         self.parser = Lark(r"""
             ?expr: func
@@ -50,7 +62,7 @@ class ExpParser:
 
             ATOM: /\w+/
 
-            func: expr (" " expr)
+            func: (expr " ") expr
             ?paren: "(" expr ")"
 
             %import common.WS
@@ -65,8 +77,3 @@ class ExpParser:
 
     def inter(self, string):
         return self.transform(self.parse(string))
-
-
-x = "if (eq 0 n) 1 n"
-transformed = ExpParser().inter(x)
-print(transformed)
