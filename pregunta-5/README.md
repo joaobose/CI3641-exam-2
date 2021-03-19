@@ -1,8 +1,8 @@
 # Overview
 
-En este modulo tenemos la respuestas de la pregunta de 5 del examen. **Las expresiones deben ser introducidad utilizando parentesis redundantes.** El resto funciona tal como se especifica en el enunciado de la pregunta.
+En este modulo tenemos la respuestas de la pregunta de 5 del examen. **Las expresiones deben ser introducidas utilizando parentesis redundantes.** El resto funciona tal como se especifica en el enunciado de la pregunta.
 
-No se logro construir un parser que parseara expresiones con asociatividad a izquierda que no fuera **no determinista**, esto porque **Lark** tiene problemas para expresar la asociatividad. Se intento implementar un parser recursivo descendente usando **Arpeggio** pero no se logro que retornara las expresiones parseadas correctamente.
+No se logro construir un parser que parseara expresiones con asociatividad a izquierda que no fuera **no determinista**, esto porque **Lark** tiene problemas para expresar la asociatividad. Se intento implementar un parser recursivo descendente usando **Arpeggio** pero no se logro que retornara las expresiones parseadas correctamente o que no entrara recursion infinita.
 
 ## Resultados de tests y coverage
 
